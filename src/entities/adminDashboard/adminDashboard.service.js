@@ -1,12 +1,90 @@
 // src/entities/adminDashboard/adminDashboard.service.js
 import Contact from '../contact/contact.model.js';
 import ServicePage from '../servicePage/servicePage.model.js';
+import User from '../auth/auth.model.js';
+import RoleType from '../../lib/types.js';
 
 const MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
 const getServiceOptions = async () => {
   const titles = await ServicePage.distinct('title', { title: { $exists: true, $ne: '' } });
   return titles.map((t) => String(t).trim()).filter((t) => t.length > 0);
+};
+
+const buildAdminNameFromEmail = (email) => {
+  const localPart = String(email || '')
+    .split('@')[0]
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim();
+
+  const firstName = localPart
+    ? localPart
+        .split(' ')
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ')
+    : 'Admin';
+
+  return {
+    firstName,
+    lastName: 'Admin',
+  };
+};
+
+export const createAdminAccountService = async ({
+  email,
+  password,
+  firstName,
+  lastName,
+}) => {
+  if (!email || !password) {
+    throw new Error('Email and password are required');
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const existingUser = await User.findOne({ email: normalizedEmail });
+
+  if (existingUser) {
+    throw new Error('User already registered.');
+  }
+
+  const fallbackName = buildAdminNameFromEmail(normalizedEmail);
+
+  const admin = await User.create({
+    firstName: String(firstName || fallbackName.firstName).trim(),
+    lastName: String(lastName || fallbackName.lastName).trim(),
+    email: normalizedEmail,
+    password,
+    role: RoleType.ADMIN,
+    otpVerified: true,
+    isVerified: true,
+    otp: null,
+    otpExpires: null,
+    resetExpires: null,
+  });
+
+  const payload = { _id: admin._id, role: admin.role };
+  const accessToken = admin.generateAccessToken(payload);
+  const refreshToken = admin.generateRefreshToken(payload);
+
+  admin.refreshToken = refreshToken;
+  await admin.save({ validateBeforeSave: false });
+
+  return {
+    user: {
+      _id: admin._id,
+      firstName: admin.firstName,
+      lastName: admin.lastName,
+      name: admin.fullName,
+      email: admin.email,
+      role: admin.role,
+      otpVerified: admin.otpVerified,
+      isVerified: admin.isVerified,
+      profileImage: admin.profileImage,
+    },
+    accessToken,
+    refreshToken,
+  };
 };
 
 // Returns contact counts per month for the chosen range, grouped by year.
