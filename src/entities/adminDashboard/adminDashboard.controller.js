@@ -1,5 +1,53 @@
 // src/entities/adminDashboard/adminDashboard.controller.js
-import { getContactMonthlyStatsService, getContactServiceStatsService } from './adminDashboard.service.js';
+import { generateResponse } from '../../lib/responseFormate.js';
+import {
+  createAdminAccountService,
+  getContactMonthlyStatsService,
+  getContactServiceStatsService,
+} from './adminDashboard.service.js';
+
+export const createAdminAccount = async (req, res, next) => {
+  try {
+    const { email, password, firstName, lastName } = req.body;
+
+    const data = await createAdminAccountService({
+      email,
+      password,
+      firstName,
+      lastName,
+    });
+
+    return generateResponse(
+      res,
+      201,
+      true,
+      'Admin account created successfully',
+      data
+    );
+  } catch (error) {
+    if (error.message === 'Email and password are required') {
+      return generateResponse(
+        res,
+        400,
+        false,
+        'Email and password are required',
+        null
+      );
+    }
+
+    if (error.message === 'User already registered.') {
+      return generateResponse(
+        res,
+        400,
+        false,
+        'User already registered',
+        null
+      );
+    }
+
+    return next(error);
+  }
+};
 
 // Admin: monthly contact counts for last 24 months
 export const getContactMonthlyStats = async (req, res) => {

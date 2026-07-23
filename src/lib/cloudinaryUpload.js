@@ -14,7 +14,6 @@ cloudinary.config({
   api_secret: cloudinarySecret,
 });
 
-// ✅ Helper — safely delete temp file without crashing
 const deleteTempFile = (filePath) => {
   try {
     if (fs.existsSync(filePath)) {
@@ -36,14 +35,10 @@ export const cloudinaryUpload = async (filePath, public_id, folder) => {
       folder,
     });
 
-    // ✅ Safe delete after successful upload
     deleteTempFile(filePath);
     return uploadImage;
-
   } catch (error) {
     console.error("Cloudinary upload error:", error);
-
-    // ✅ Safe delete even on failure
     deleteTempFile(filePath);
     return "file upload failed";
   }
