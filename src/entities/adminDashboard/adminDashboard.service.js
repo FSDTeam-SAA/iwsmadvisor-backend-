@@ -6,9 +6,22 @@ import RoleType from '../../lib/types.js';
 
 const MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
-const getServiceOptions = async () => {
-  const titles = await ServicePage.distinct('title', { title: { $exists: true, $ne: '' } });
-  return titles.map((t) => String(t).trim()).filter((t) => t.length > 0);
+const getServiceDefinitions = async () => {
+  const servicePages = await ServicePage.find(
+    { title: { $exists: true, $ne: '' } },
+    { title: 1, heading: 1 }
+  ).lean();
+
+  return servicePages
+    .map((servicePage) => {
+      const title = String(servicePage.title || '').trim();
+      const heading = String(servicePage.heading || servicePage.title || '').trim();
+
+      if (!title || !heading) return null;
+
+      return { title, heading };
+    })
+    .filter(Boolean);
 };
 
 const buildAdminNameFromEmail = (email) => {
@@ -193,7 +206,11 @@ export const getContactServiceStatsService = async ({ year, from, to } = {}) => 
   ]);
 
   const statsByYear = {};
-  const baseServices = await getServiceOptions();
+  const serviceDefinitions = await getServiceDefinitions();
+  const titleToHeadingMap = new Map(
+    serviceDefinitions.map(({ title, heading }) => [title, heading])
+  );
+  const baseServices = Array.from(new Set(serviceDefinitions.map(({ heading }) => heading)));
   const serviceSet = new Set(baseServices);
 
   const monthsToInit = Math.max(
@@ -224,7 +241,7 @@ export const getContactServiceStatsService = async ({ year, from, to } = {}) => 
   aggregated.forEach(({ _id, count }) => {
     const yearVal = _id.year;
     const monthKey = MONTH_KEYS[_id.month - 1];
-    const service = _id.service;
+    const service = titleToHeadingMap.get(_id.service) || _id.service;
     if (!statsByYear[yearVal]) statsByYear[yearVal] = {};
     if (!statsByYear[yearVal][monthKey]) {
       statsByYear[yearVal][monthKey] = { counts: {}, percentages: {}, total: 0 };
