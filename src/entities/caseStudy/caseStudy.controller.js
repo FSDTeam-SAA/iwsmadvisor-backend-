@@ -4,7 +4,7 @@ import {
   getCaseStudiesService,
   getCaseStudyByIdService,
   updateCaseStudyService,
-  deleteCaseStudyService,
+  deleteCaseStudyService
 } from './caseStudy.service.js';
 
 const firstAvailableFile = (files) => {
@@ -108,7 +108,7 @@ export const createCaseStudy = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: 'Case study created successfully',
-      data: caseStudy,
+      data: caseStudy
     });
   } catch (error) {
     if (error.code === 'VALIDATION_ERROR') {
@@ -142,7 +142,7 @@ export const getCaseStudies = async (req, res) => {
       success: true,
       message: 'Case studies fetched successfully',
       data: result.data,
-      pagination: result.pagination,
+      pagination: result.pagination
     });
   } catch (error) {
     console.error('Get case studies error:', error);
@@ -178,7 +178,7 @@ export const getCaseStudyById = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Case study fetched successfully',
-      data: caseStudy,
+      data: caseStudy
     });
   } catch (error) {
     console.error('Get case study error:', error);
@@ -289,7 +289,7 @@ export const updateCaseStudy = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Case study updated successfully',
-      data: result.caseStudy,
+      data: result.caseStudy
     });
   } catch (error) {
     if (error.code === 'VALIDATION_ERROR') {

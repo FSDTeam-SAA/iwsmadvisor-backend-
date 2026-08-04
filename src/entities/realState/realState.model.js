@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const KeyCapabilitySchema = new mongoose.Schema(
   {
     title: { type: String, trim: true },
-    subtitles: [{ type: String, trim: true }],
+    subtitles: [{ type: String, trim: true }]
   },
   { _id: false }
 );

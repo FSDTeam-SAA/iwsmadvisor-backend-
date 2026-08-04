@@ -5,6 +5,7 @@ const toTrimmedString = (val) => {
   if (val === undefined || val === null) return '';
   return String(val).trim();
 };
+
 const isNonEmptyString = (val) => toTrimmedString(val).length > 0;
 
 const decodeHtmlEntities = (value) =>
@@ -31,6 +32,7 @@ const toStringArray = (val) => {
   if (Array.isArray(val)) {
     return val.map(toTrimmedString).filter((item) => item.length > 0);
   }
+
   if (typeof val === 'string') {
     try {
       const parsed = JSON.parse(val);
@@ -38,11 +40,15 @@ const toStringArray = (val) => {
         return parsed.map(toTrimmedString).filter((item) => item.length > 0);
       }
     } catch (_) {
-      // fall through
+      // Fall through to comma/plain string parsing.
     }
-    const str = toTrimmedString(val);
-    return str ? [str] : [];
+
+    return val
+      .split(',')
+      .map(toTrimmedString)
+      .filter((item) => item.length > 0);
   }
+
   return [];
 };
 
@@ -54,11 +60,14 @@ const hiddenResponseFields = [
   'companyName',
   'client',
   'duration',
-  'teamSize',
+  'teamSize'
 ];
+
+const richTextFields = ['customer', 'challenge', 'solution', 'benefit'];
 
 export const serializeCaseStudy = (caseStudy) => {
   if (!caseStudy) return caseStudy;
+
   const payload =
     typeof caseStudy.toObject === 'function'
       ? caseStudy.toObject()
@@ -78,31 +87,40 @@ export const serializeCaseStudy = (caseStudy) => {
 };
 
 const parsePagination = (page, limit) => {
-  const safePage = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
-  const safeLimit = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Math.min(Number(limit), 50) : 10;
+  const safePage =
+    Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+  const safeLimit =
+    Number.isFinite(Number(limit)) && Number(limit) > 0
+      ? Math.min(Number(limit), 50)
+      : 10;
+
   return { page: safePage, limit: safeLimit };
 };
 
 const mapFilePayload = async (file) => {
   if (!file) return undefined;
+
   const source = Array.isArray(file) ? file[0] : file;
   if (!source) return undefined;
+
   const uploaded = await cloudinaryUpload(
     source.path,
     `${Date.now()}-${source.filename}`,
     'case-studies'
   );
+
   if (!uploaded || uploaded === 'file upload failed') {
     const err = new Error('Image upload failed');
     err.code = 'UPLOAD_ERROR';
     throw err;
   }
+
   return {
     filename: source.filename,
     originalName: source.originalname || source.originalName,
     mimeType: source.mimetype || source.mimeType,
     size: source.size,
-    url: uploaded.secure_url,
+    url: uploaded.secure_url || uploaded.url
   };
 };
 
@@ -127,38 +145,44 @@ export const createCaseStudyService = async ({
   const titleStr = toTrimmedString(title);
   const descriptionStr = toTrimmedString(description);
 
-  if (!isNonEmptyString(titleStr) || !isNonEmptyString(descriptionStr)) {
+  if (data.title !== undefined) {
+    if (!isNonEmptyString(data.title)) {
+      const err = new Error('title cannot be empty');
+      err.code = 'VALIDATION_ERROR';
+      throw err;
+    }
+    updates.title = toTrimmedString(data.title);
+  }
+
+  if (data.description !== undefined) {
+    if (!isNonEmptyString(data.description)) {
+      const err = new Error('description cannot be empty');
+      err.code = 'VALIDATION_ERROR';
+      throw err;
+    }
+    updates.description = toTrimmedString(data.description);
+  }
+
+  if (requireBaseFields && (!updates.title || !updates.description)) {
     const err = new Error('Title and description are required');
     err.code = 'VALIDATION_ERROR';
     throw err;
   }
 
-  const imagePayload = await mapFilePayload(image);
-  const technologies = toStringArray(technologiesUsed);
-
-  const caseStudy = await CaseStudy.create({
-    title: titleStr,
-    description: descriptionStr,
-    subtitle: toTrimmedString(subtitle),
-    challenge: toPlainText(challenge || ''),
-    solution: toPlainText(solution || ''),
-    benefit: toPlainText(benefit || ''),
-    customer: toPlainText(customer || ''),
-    ...(client !== undefined ? { client: toTrimmedString(client) } : {}),
-    ...(duration !== undefined ? { duration: toTrimmedString(duration) } : {}),
-    ...(teamSize !== undefined ? { teamSize: toTrimmedString(teamSize) } : {}),
-    ...(technologies.length > 0 ? { technologiesUsed: technologies } : {}),
-    ...(resultImpact !== undefined ? { resultImpact: toTrimmedString(resultImpact) } : {}),
-    ...(caseExperience !== undefined ? { caseExperience: toTrimmedString(caseExperience) } : {}),
-    ...(clientName !== undefined ? { clientName: toTrimmedString(clientName) } : {}),
-    ...(companyName !== undefined ? { companyName: toTrimmedString(companyName) } : {}),
-    ...(imagePayload ? { image: imagePayload } : {}),
-  });
+  for (const field of ['subtitle', 'client', 'duration', 'teamSize']) {
+    if (data[field] !== undefined) {
+      updates[field] = toTrimmedString(data[field]);
+    }
+  }
 
   return serializeCaseStudy(caseStudy);
 };
 
-export const getCaseStudiesService = async ({ page = 1, limit = 10, search }) => {
+export const getCaseStudiesService = async ({
+  page = 1,
+  limit = 10,
+  search
+}) => {
   const { page: safePage, limit: safeLimit } = parsePagination(page, limit);
 
   const filter = {};
@@ -166,7 +190,7 @@ export const getCaseStudiesService = async ({ page = 1, limit = 10, search }) =>
     const safeSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     filter.$or = [
       { title: { $regex: safeSearch, $options: 'i' } },
-      { description: { $regex: safeSearch, $options: 'i' } },
+      { description: { $regex: safeSearch, $options: 'i' } }
     ];
   }
 
@@ -175,7 +199,7 @@ export const getCaseStudiesService = async ({ page = 1, limit = 10, search }) =>
     CaseStudy.find(filter)
       .sort({ createdAt: -1 })
       .skip((safePage - 1) * safeLimit)
-      .limit(safeLimit),
+      .limit(safeLimit)
   ]);
 
   return {
@@ -184,8 +208,8 @@ export const getCaseStudiesService = async ({ page = 1, limit = 10, search }) =>
       page: safePage,
       limit: safeLimit,
       total,
-      totalPages: Math.ceil(total / safeLimit) || 1,
-    },
+      totalPages: Math.ceil(total / safeLimit) || 1
+    }
   };
 };
 
@@ -242,7 +266,6 @@ export const updateCaseStudyService = async (id, data) => {
     }
   }
 
-  const updated = await CaseStudy.findByIdAndUpdate(id, { $set: updates }, { new: true });
   if (!updated) return { notFound: true };
   return { caseStudy: serializeCaseStudy(updated) };
 };

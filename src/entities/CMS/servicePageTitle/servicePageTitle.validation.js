@@ -5,7 +5,7 @@ export const createTitleValidation = Joi.object({
     "string.empty": "Title is required",
     "any.required": "Title is required",
   }),
-  order: Joi.number().optional().default(0),
+  order: Joi.number().optional()
 });
 
 export const updateTitleValidation = Joi.object({
