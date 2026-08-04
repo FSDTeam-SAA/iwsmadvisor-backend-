@@ -20,22 +20,29 @@ export const emailExpires = Number.parseInt(
   process.env.EMAIL_EXPIRES || 15 * 60 * 1000,
   10
 );
-export const emailFrom = process.env.EMAIL_FROM || process.env.EMAIL_ADDRESS;
+export const emailFrom = process.env.EMAIL_FROM;
 export const adminMail = process.env.ADMIN_EMAIL;
 export const emailTo = process.env.EMAIL_TO;
-export const contactEmail = process.env.CONTACT_EMAIL;
-export const careersEmail = process.env.CAREERS_EMAIL;
-export const subscriptionNotificationEmail =
-  process.env.SUBSCRIPTION_NOTIFICATION_EMAIL ||
-  process.env.CONTACT_EMAIL;
+export const contactEmail =
+  process.env.CONTACT_EMAIL || process.env.EMAIL_TO || process.env.EMAIL_FROM;
+export const careersEmail =
+  process.env.CAREERS_EMAIL ||
+  process.env.ADMIN_EMAIL ||
+  process.env.EMAIL_FROM;
 
-// Microsoft Graph. Supports both the existing MS_* names and MS_GRAPH_* names.
-export const msGraphTenantId =
-  process.env.MS_TENANT_ID || process.env.MS_GRAPH_TENANT_ID;
-export const msGraphClientId =
-  process.env.MS_CLIENT_ID || process.env.MS_GRAPH_CLIENT_ID;
-export const msGraphClientSecret =
-  process.env.MS_CLIENT_SECRET || process.env.MS_GRAPH_CLIENT_SECRET;
+// SMTP fallback. Microsoft Graph is used when its config is complete; SMTP is
+// available as a backup for deployments that use a traditional mail provider.
+export const smtpHost = process.env.SMTP_HOST;
+export const smtpPort = Number.parseInt(process.env.SMTP_PORT || '587', 10);
+export const smtpUser = process.env.SMTP_USER;
+export const smtpPass = process.env.SMTP_PASS;
+export const smtpSecure = process.env.SMTP_SECURE === 'true';
+
+// Microsoft Graph (OAuth2 client_credentials) — env var names match .env exactly
+export const msGraphTenantId = process.env.MS_TENANT_ID;
+export const msGraphClientId = process.env.MS_CLIENT_ID;
+export const msGraphClientSecret = process.env.MS_CLIENT_SECRET;
+// Sender email: use the dedicated MS_GRAPH_SENDER_EMAIL if set, otherwise fall back to EMAIL_FROM
 export const msGraphSenderEmail =
   process.env.MS_GRAPH_SENDER_EMAIL || emailFrom;
 

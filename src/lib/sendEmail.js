@@ -98,7 +98,7 @@ const formatProviderError = (error) => {
 const getAccessToken = async () => {
   if (!hasGraphConfig()) {
     throw new Error(
-      'Microsoft Graph email config is incomplete. Set MS_TENANT_ID/MS_GRAPH_TENANT_ID, MS_CLIENT_ID/MS_GRAPH_CLIENT_ID, MS_CLIENT_SECRET/MS_GRAPH_CLIENT_SECRET, and EMAIL_FROM or MS_GRAPH_SENDER_EMAIL.'
+      'Microsoft Graph email config is incomplete. Set MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET, and EMAIL_FROM or MS_GRAPH_SENDER_EMAIL.'
     );
   }
 
@@ -213,7 +213,7 @@ const sendViaGraph = async ({ recipients, subject, html, attachments }) => {
 const getSmtpTransporter = () => {
   if (!hasSmtpConfig()) {
     throw new Error(
-      'SMTP email config is incomplete. Set SMTP_HOST/EMAIL_HOST, SMTP_USER/EMAIL_ADDRESS, and SMTP_PASS/EMAIL_PASS.'
+      'SMTP email config is incomplete. Set SMTP_HOST, SMTP_USER, and SMTP_PASS.'
     );
   }
 
@@ -240,7 +240,7 @@ const sendViaSmtp = async ({ recipients, subject, html, attachments }) => {
     to: recipients,
     subject,
     html,
-    attachments: Array.isArray(attachments) ? attachments : []
+    attachments
   });
 };
 

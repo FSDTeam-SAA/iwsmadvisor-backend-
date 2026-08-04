@@ -22,12 +22,11 @@ const RealStateSchema = new mongoose.Schema(
       originalName: { type: String },
       mimeType: { type: String },
       size: { type: Number },
-      url: { type: String }
-    }
+      url: { type: String },
+    },
   },
   { timestamps: true }
 );
 
-const RealState =
-  mongoose.models.RealState || mongoose.model('RealState', RealStateSchema);
+const RealState = mongoose.models.RealState || mongoose.model('RealState', RealStateSchema);
 export default RealState;

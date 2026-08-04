@@ -5,7 +5,6 @@ import {
   careersEmail,
   publicCareersBaseUrl
 } from '../../core/config/config.js';
-import { getCareerApplicationNotificationTemplate } from '../../lib/emailTemplates.js';
 import {
   createCareerApplicationService,
   getCareerApplicationsService,

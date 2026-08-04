@@ -2,7 +2,6 @@
 import mongoose from 'mongoose';
 import sendEmail from '../../lib/sendEmail.js';
 import { contactEmail } from '../../core/config/config.js';
-import { getContactNotificationTemplate } from '../../lib/emailTemplates.js';
 import {
   createContactService,
   getContactsService,

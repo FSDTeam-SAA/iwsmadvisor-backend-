@@ -77,7 +77,7 @@ export const serializeCaseStudy = (caseStudy) => {
     delete payload[field];
   }
 
-  for (const field of richTextFields) {
+  for (const field of ['customer', 'challenge', 'solution', 'benefit']) {
     if (payload[field] !== undefined) {
       payload[field] = toPlainText(payload[field]);
     }
@@ -124,11 +124,26 @@ const mapFilePayload = async (file) => {
   };
 };
 
-const normalizeCaseStudyPayload = async (
-  data,
-  { requireBaseFields = false } = {}
-) => {
-  const updates = {};
+export const createCaseStudyService = async ({
+  title,
+  description,
+  subtitle,
+  challenge,
+  solution,
+  benefit,
+  customer,
+  client,
+  duration,
+  teamSize,
+  technologiesUsed,
+  resultImpact,
+  caseExperience,
+  clientName,
+  companyName,
+  image,
+}) => {
+  const titleStr = toTrimmedString(title);
+  const descriptionStr = toTrimmedString(description);
 
   if (data.title !== undefined) {
     if (!isNonEmptyString(data.title)) {
@@ -160,43 +175,6 @@ const normalizeCaseStudyPayload = async (
     }
   }
 
-  for (const field of richTextFields) {
-    if (data[field] !== undefined) {
-      updates[field] = toPlainText(data[field]);
-    }
-  }
-
-  if (data.technologiesUsed !== undefined) {
-    updates.technologiesUsed = toStringArray(data.technologiesUsed);
-  }
-
-  for (const field of [
-    'resultImpact',
-    'caseExperience',
-    'clientName',
-    'companyName'
-  ]) {
-    if (data[field] !== undefined) {
-      updates[field] = toTrimmedString(data[field]);
-    }
-  }
-
-  if (data.image !== undefined) {
-    const imagePayload = await mapFilePayload(data.image);
-    if (imagePayload) {
-      updates.image = imagePayload;
-    }
-  }
-
-  return updates;
-};
-
-export const createCaseStudyService = async (data) => {
-  const payload = await normalizeCaseStudyPayload(data, {
-    requireBaseFields: true
-  });
-
-  const caseStudy = await CaseStudy.create(payload);
   return serializeCaseStudy(caseStudy);
 };
 
@@ -241,13 +219,52 @@ export const getCaseStudyByIdService = async (id) => {
 };
 
 export const updateCaseStudyService = async (id, data) => {
-  const updates = await normalizeCaseStudyPayload(data);
+  const allowed = [
+    'title',
+    'description',
+    'subtitle',
+    'challenge',
+    'solution',
+    'benefit',
+    'customer',
+    'client',
+    'duration',
+    'teamSize',
+    'technologiesUsed',
+    'resultImpact',
+    'caseExperience',
+    'clientName',
+    'companyName',
+    'image',
+  ];
+  const updates = {};
 
-  const updated = await CaseStudy.findByIdAndUpdate(
-    id,
-    { $set: updates },
-    { new: true }
-  );
+  for (const field of allowed) {
+    if (data[field] !== undefined) {
+      if (['title', 'description'].includes(field) && !isNonEmptyString(data[field])) {
+        const err = new Error(`${field} cannot be empty`);
+        err.code = 'VALIDATION_ERROR';
+        throw err;
+      }
+
+      if (field === 'image') {
+        const imagePayload = await mapFilePayload(data[field]);
+        if (imagePayload) {
+          updates[field] = imagePayload;
+        }
+        continue;
+      }
+
+      if (field === 'technologiesUsed') {
+        updates[field] = toStringArray(data[field]);
+        continue;
+      }
+
+      updates[field] = ['customer', 'challenge', 'solution', 'benefit'].includes(field)
+        ? toPlainText(data[field])
+        : toTrimmedString(data[field]);
+    }
+  }
 
   if (!updated) return { notFound: true };
   return { caseStudy: serializeCaseStudy(updated) };
