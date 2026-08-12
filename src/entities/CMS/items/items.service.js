@@ -16,7 +16,8 @@ const getAllItemsFromDb = async (query) => {
         page = 1,
         limit = 10,
         sortBy = "createdAt",
-        sortOrder = "desc",
+        // Preserve creation order so the first strength item stays first.
+        sortOrder = "asc",
     } = query;
 
     const ALLOWED_SORT_FIELDS = ["createdAt", "updatedAt", "title"];
@@ -25,7 +26,7 @@ const getAllItemsFromDb = async (query) => {
     const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
     const safeSortOrder = sortOrder === "asc" ? 1 : -1;
 
-    const sort = { [safeSortBy]: safeSortOrder };
+    const sort = { [safeSortBy]: safeSortOrder, _id: safeSortOrder };
     const skip = (safePage - 1) * safeLimit;
 
     const [totalDocs, items] = await Promise.all([

@@ -8,6 +8,16 @@ const router = express.Router();
 
 // ✅ Public
 router.get("/all", expertiseController.getAllExpertises);
+
+// Admin only — kept at /all to support the content-management form.
+router.post(
+    "/all",
+    verifyToken,
+    adminMiddleware,
+    validateRequest(expertiseValidation.createExpertiseSchema),
+    expertiseController.createExpertise,
+);
+
 router.get("/:expertiseId", expertiseController.getExpertiseById);
 
 // ✅ Admin only
