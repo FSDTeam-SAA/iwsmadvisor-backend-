@@ -2,6 +2,7 @@ import axios from 'axios';
 import nodemailer from 'nodemailer';
 import {
   emailFrom,
+  emailFromName,
   msGraphTenantId,
   msGraphClientId,
   msGraphClientSecret,
@@ -174,7 +175,13 @@ const buildGraphMessage = (recipients, subject, html, graphAttachments) => {
     body: { contentType: 'HTML', content: html },
     toRecipients: recipients.map((recipient) => ({
       emailAddress: { address: recipient }
-    }))
+    })),
+    from: {
+      emailAddress: {
+        name: emailFromName || 'IWMS Advisors',
+        address: msGraphSenderEmail
+      }
+    }
   };
 
   if (graphAttachments.length > 0) {
@@ -234,9 +241,13 @@ const getSmtpTransporter = () => {
 
 const sendViaSmtp = async ({ recipients, subject, html, attachments }) => {
   const transporter = getSmtpTransporter();
+  const senderAddress = emailFrom || smtpUser;
+  const formattedFrom = emailFromName
+    ? `"${emailFromName}" <${senderAddress}>`
+    : senderAddress;
 
   await transporter.sendMail({
-    from: emailFrom || smtpUser,
+    from: formattedFrom,
     to: recipients,
     subject,
     html,
