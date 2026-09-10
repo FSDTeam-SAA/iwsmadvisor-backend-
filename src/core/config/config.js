@@ -20,6 +20,7 @@ export const emailExpires = Number.parseInt(
   process.env.EMAIL_EXPIRES || 15 * 60 * 1000
 );
 export const emailFrom = process.env.EMAIL_FROM;
+export const emailFromName = process.env.EMAIL_FROM_NAME || 'IWMS Advisors';
 export const adminMail = process.env.ADMIN_EMAIL;
 export const emailTo = process.env.EMAIL_TO;
 export const contactEmail =
