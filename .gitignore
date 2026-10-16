@@ -22,8 +22,6 @@ build/
 uploads/
 
 # Environment files
-.env
-.env.local
 .env.*.local
 
 # Temporary files & scripts
